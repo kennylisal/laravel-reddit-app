@@ -1,0 +1,36 @@
+services:
+  laravel-app:
+    build:
+      # context: ./reddit-clone
+      # dockerfile:
+      context: . # Set context to root directory (where Dockerfile is)
+      dockerfile: Dockerfile # Explicitly specify the Dockerfile
+    container_name: reddit-clone
+    # image: php:8.3-apache
+    volumes:
+      - ./reddit-clone:/var/www/html
+    ports:
+      - "8000:80" # Maps host port 8000 to container port 80
+    depends_on:
+      - mysql # Ensures MySQL starts first
+    networks:
+      - laravel_network
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: reddit_clone
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
+# SELECT table_name FROM information_schema.tables
+# WHERE table_schema = 'reddit-clone';
+
+# docker exec -it laravel-projects-mysql-1 mysql -u root -p
