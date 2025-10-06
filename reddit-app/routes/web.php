@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SubredditController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ Route::get('/', [PostController::class, 'index'])->name('home');
 
 Route::get('/r/{subreddit:slug}', [SubredditController::class, 'index'])->name('subreddit.index');
 
+Route::get('/search', [SearchController::class, 'basic']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {

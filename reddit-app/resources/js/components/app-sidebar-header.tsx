@@ -1,43 +1,49 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { SearchResults } from '@/types/search';
-import { useEffect, useState } from 'react';
-import { Command, CommandInput } from './ui/command';
+import { JSX, useEffect, useState } from 'react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 
 function useDebounce({ value, delay }: { value: string; delay: number }) {
     const [debounceValue, setDebounceValue] = useState(value);
 
     useEffect(() => {
-        if (value.length > 2) {
-            const handler = setTimeout(() => {
-                setDebounceValue(value);
-            }, delay);
-            return () => {
-                clearTimeout(handler);
-            };
-        }
+        const handler = setTimeout(() => {
+            setDebounceValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
     }, [value, delay]);
     return debounceValue;
 }
 
-function CommandWithDebounce({ onDebounce }: { onDebounce: (data: SearchResults) => void }) {
+function CommandWithDebounce({
+    onDebounce,
+    onFocus,
+    onBlur,
+}: {
+    onFocus: () => void;
+    onBlur: () => void;
+    onDebounce: (data: SearchResults) => void;
+}) {
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce({ value: searchTerm, delay: 500 });
 
     useEffect(() => {
         const search = async (query: string) => {
-            try {
-                const response = await fetch(`/search?search=${encodeURIComponent(query)}`, {
-                    method: 'GET',
-                    headers: { Accept: 'application/json' },
-                });
+            if (searchTerm.length > 2) {
+                try {
+                    const response = await fetch(`/search?search=${encodeURIComponent(query)}`, {
+                        method: 'GET',
+                        headers: { Accept: 'application/json' },
+                    });
 
-                const data: SearchResults = await response.json();
-                onDebounce(data);
-                // return data;
-                // console.log(data);
-            } catch (error) {
-                console.log(error);
+                    const data: SearchResults = await response.json();
+                    onDebounce(data);
+                } catch (error) {
+                    console.log(error);
+                }
             }
         };
         if (debouncedSearchTerm) {
@@ -56,21 +62,37 @@ function CommandWithDebounce({ onDebounce }: { onDebounce: (data: SearchResults)
             className="mr-16 block h-[48px] w-[480px] text-base text-gray-900"
             value={searchTerm}
             onValueChange={handleInputChange}
+            onFocus={onFocus}
+            onBlur={onBlur}
         />
     );
 }
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
-    const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
-    const onDebounceSearch = (data: SearchResults | null) => {
-        if (!data) {
-            setSearchResults(null);
-            return;
-        }
+    const [searchResults, setSearchResults] = useState<SearchResults>({ length: 0, results: [] });
+    const [listElement, setListElement] = useState<JSX.Element>(<></>);
+    const [isFocused, setIsFocused] = useState(false);
+    const onDebounceSearch = (data: SearchResults) => {
         setSearchResults(data);
     };
     useEffect(() => {
         console.log(searchResults);
+        if (searchResults.length == 0) {
+            setListElement(
+                <CommandList className="bg-white">
+                    <CommandEmpty>No results found.</CommandEmpty>
+                </CommandList>,
+            );
+        } else {
+            setListElement(
+                <CommandList className="bg-white">
+                    <CommandGroup>
+                        {...searchResults.results.map((element) => <CommandItem key={element.slug}>{element.name}</CommandItem>)}
+                    </CommandGroup>
+                </CommandList>,
+            );
+        }
+        console.log('aya');
     }, [searchResults]);
 
     return (
@@ -88,21 +110,12 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     <div className="fixed top-4.5 flex-col">
                         <div className="flex">
                             <Command className="w-[540px] rounded-lg border bg-gray-100 shadow-md hover:bg-gray-200" shouldFilter={true}>
-                                <CommandWithDebounce onDebounce={onDebounceSearch} />
-
-                                {/* <CommandInput
-                                    placeholder="Search by address or postcode"
-                                    className="mr-16 block h-[48px] w-[480px] text-base text-gray-900"
-                                /> */}
-                                {/* <CommandList className="bg-white">
-                                    <CommandEmpty>No results found.</CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem>Halo</CommandItem>
-                                        <CommandItem>Halo1</CommandItem>
-                                        <CommandItem>Halo2</CommandItem>
-                                    </CommandGroup>
-                                    <CommandSeparator />
-                                </CommandList> */}
+                                <CommandWithDebounce
+                                    onDebounce={onDebounceSearch}
+                                    onBlur={() => setIsFocused(false)}
+                                    onFocus={() => setIsFocused(true)}
+                                />
+                                {isFocused ? listElement : null}
                             </Command>
                         </div>
                     </div>
@@ -114,6 +127,23 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     );
 }
 
+{
+    /* <CommandInput
+                                    placeholder="Search by address or postcode"
+                                    className="mr-16 block h-[48px] w-[480px] text-base text-gray-900"
+                                /> */
+}
+{
+    /* <CommandList className="bg-white">
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    <CommandGroup>
+                                        <CommandItem>Halo</CommandItem>
+                                        <CommandItem>Halo1</CommandItem>
+                                        <CommandItem>Halo2</CommandItem>
+                                    </CommandGroup>
+                                    <CommandSeparator />
+                                </CommandList> */
+}
 function GuestHeaderAction() {
     return (
         <div className="ml-auto flex items-center space-x-4">

@@ -10,6 +10,7 @@ class PostController extends Controller
 {
     public function index()
     {
+
         $posts = Post::with([
             'subreddit' => function ($query) {
                 $query->select('id', 'slug', 'image');
