@@ -3,7 +3,6 @@ import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { SearchResults } from '@/types/search';
 import { JSX, useEffect, useState } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
-
 function useDebounce({ value, delay }: { value: string; delay: number }) {
     const [debounceValue, setDebounceValue] = useState(value);
 
@@ -44,6 +43,9 @@ function CommandWithDebounce({
                 } catch (error) {
                     console.log(error);
                 }
+            } else if (searchTerm.length == 0) {
+                const data: SearchResults = { length: 0, results: [] };
+                onDebounce(data);
             }
         };
         if (debouncedSearchTerm) {
@@ -75,6 +77,9 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     const onDebounceSearch = (data: SearchResults) => {
         setSearchResults(data);
     };
+    const commandOnSelect = (value: string) => {
+        console.log(value);
+    };
     useEffect(() => {
         console.log(searchResults);
         if (searchResults.length == 0) {
@@ -87,7 +92,11 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             setListElement(
                 <CommandList className="bg-white">
                     <CommandGroup>
-                        {...searchResults.results.map((element) => <CommandItem key={element.slug}>{element.name}</CommandItem>)}
+                        {...searchResults.results.map((element) => (
+                            <CommandItem onSelect={() => commandOnSelect('xxxx')} key={element.slug}>
+                                {'r/' + element.name}
+                            </CommandItem>
+                        ))}
                     </CommandGroup>
                 </CommandList>,
             );
@@ -96,7 +105,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     }, [searchResults]);
 
     return (
-        <header className="flex h-18 shrink-0 items-center gap-2 border-b-2 border-black px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-15 md:px-4">
+        <header className="fixed z-20 flex h-18 w-max flex-auto shrink-0 items-center gap-2 border-b-2 border-black bg-white px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-15">
             <div className="flex w-full items-center gap-2">
                 <SidebarTrigger className="-ml-1" />
                 {/* <text>{searchResults ? searchResults.length : 'xxxx'}</text> */}
